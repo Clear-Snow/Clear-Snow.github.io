@@ -1,14 +1,448 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-cn">
 <head>
-    <meta charset="UTF-8">
-    <title>清雪 - 个人主页</title>
-    <!-- 删掉这行： -->
-    <!-- <meta name="robots" content="noindex, nofollow"> -->
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>清雪的个人主页</title>
+    <link rel="shortcut icon" href="images/favicon.ico" />
+    <link rel="stylesheet" href="assets/css/main.css" />
+    <style>
+        * {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body { background: #2a2d32 !important; }
+        #browser-bg {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1;
+            pointer-events: none;
+            border: none;
+        }
+        body.is-article-visible #browser-bg {
+            transform: scale(1.0825);
+            filter: blur(0.2rem);
+            transition: transform 0.325s ease-in-out, filter 0.325s ease-in-out;
+        }
+        #wrapper { z-index: 3; }
+        #header  { z-index: 4; }
+        #footer  { z-index: 4; }
+        #main    { z-index: 5; width: 100%; height: 100vh; position: fixed; top: 0; left: 0; padding: 1.5rem; box-sizing: border-box; overflow-y: auto; }
+        #main article { width: auto !important; max-width: 40rem; max-width: calc(100% - 3rem); margin: 1.5rem auto; padding: 2.5rem 2rem; border-radius: 1rem; background-color: rgba(27,31,34,.6) !important; }
+        #main article .close { display: none !important; }
+        @media screen and (max-width: 480px) {
+            #main { padding: 0.75rem; }
+            #main article { margin: 0.75rem auto; padding: 2rem 1.25rem; max-width: calc(100% - 1.5rem); }
+        }
+        #header .logo {
+            transition: transform 0.6s cubic-bezier(.23,1,.32,1), box-shadow 0.6s ease;
+            animation: logoBreath 3s ease-in-out infinite;
+        }
+        @keyframes logoBreath {
+            0%, 100% { box-shadow: 0 0 0 rgba(255,255,255,0); }
+            50% { box-shadow: 0 0 20px rgba(255,255,255,0.15), 0 0 40px rgba(255,255,255,0.05); }
+        }
+        #header .content .inner h1 {
+            background: linear-gradient(90deg, #fff, rgba(255,255,255,0.7), #fff);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: titleShimmer 4s linear infinite;
+        }
+        @keyframes titleShimmer {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+        #header nav ul li a {
+            position: relative;
+            overflow: hidden;
+            transition: color 0.3s ease;
+        }
+        #header nav ul li a:hover {
+            background-color: transparent !important;
+        }
+        #header nav ul li a:active {
+            background-color: transparent !important;
+        }
+        .contact-icons a {
+            display: inline-block;
+        }
+        #main article.active {
+            animation: modalIn 0.4s cubic-bezier(.23,1,.32,1) forwards;
+        }
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        #main article ul li,
+        #main article ul.alt li,
+        #main article table tbody tr {
+            opacity: 0;
+            transform: translateX(-15px);
+            animation: itemSlideIn 0.4s ease forwards;
+        }
+        #main article ul li:nth-child(1), #main article ul.alt li:nth-child(1), #main article table tbody tr:nth-child(1) { animation-delay: 0.15s; }
+        #main article ul li:nth-child(2), #main article ul.alt li:nth-child(2), #main article table tbody tr:nth-child(2) { animation-delay: 0.25s; }
+        #main article ul li:nth-child(3), #main article ul.alt li:nth-child(3), #main article table tbody tr:nth-child(3) { animation-delay: 0.35s; }
+        #main article ul li:nth-child(4), #main article ul.alt li:nth-child(4), #main article table tbody tr:nth-child(4) { animation-delay: 0.45s; }
+        @keyframes itemSlideIn {
+            to { opacity: 1; transform: translateX(0); }
+        }
+        #main article a {
+            transition: color 0.3s ease, text-shadow 0.3s ease;
+        }
+        #main article a:hover {
+            text-shadow: 0 0 8px rgba(255,255,255,0.4);
+        }
+        #main article .box {
+            transition: border-color 0.3s ease, background-color 0.3s ease, transform 0.3s ease;
+        }
+        #main article .box:hover {
+            border-color: rgba(255,255,255,0.3);
+            background-color: rgba(255,255,255,0.03);
+            transform: translateY(-2px);
+        }
+        .cursor-glow {
+            position: fixed;
+            width: 300px; height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,255,255,0.04) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 2;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.3s ease;
+            opacity: 0;
+        }
+        body:not(.is-article-visible) .cursor-glow {
+            opacity: 1;
+        }
+        .floating-particle {
+            position: fixed;
+            width: 3px; height: 3px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 2;
+            animation: floatUp linear infinite;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+        }
+        body.is-preload #wrapper {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s ease, transform 0.8s cubic-bezier(.23,1,.32,1);
+        }
+        body:not(.is-preload) #wrapper {
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.8s ease, transform 0.8s cubic-bezier(.23,1,.32,1);
+        }
+        #footer .copyright {
+            transition: opacity 0.3s ease;
+        }
+        #footer .copyright:hover {
+            opacity: 1 !important;
+        }
+        .donate-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 1.5rem 0 1rem;
+        }
+        .donate-tab {
+            padding: 0.5rem 1.5rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.6);
+            transition: all 0.3s ease;
+            letter-spacing: 0.1rem;
+        }
+        .donate-tab:hover {
+            border-color: rgba(255,255,255,0.6);
+            color: #fff;
+        }
+        .donate-tab.active {
+            background: rgba(255,255,255,0.1);
+            border-color: #fff;
+            color: #fff;
+        }
+        .donate-qr {
+            text-align: center;
+        }
+        .donate-img p {
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 0.5rem;
+        }
+        .donate-img {
+            animation: itemSlideIn 0.4s ease forwards;
+        }
+    </style>
+    <noscript><style>body.is-preload{display:block;}</style></noscript>
 </head>
-<body>
-    <h1>你好，我是清雪</h1>
-    <p>这是我的个人主页</p>
+<body class="is-preload">
+    <iframe id="browser-bg" src="indexeskn.html" loading="lazy"></iframe>
+    <div class="cursor-glow" id="cursorGlow"></div>
+    <div id="wrapper">
+        <header id="header">
+            <div class="icon">
+                <img src="images/icon-fa-gem.png" alt="logo" class="logo" />
+            </div>
+            <div class="content">
+                <div class="inner">
+                    <h1>清雪的个人主页</h1>
+                    <p id="subtitle"></p>
+                </div>
+            </div>
+            <nav>
+                <ul>
+                    <li><a target="_blank" href="https://link3.cc/aitv">清雪APP</a></li>
+                    <li><a href="#about">站长介绍</a></li>
+                    <li><a href="#donate">赞助站长</a></li>
+                    <li><a href="#resources">资源分享</a></li>
+                </ul>
+            </nav>
+        </header>
+        <footer id="footer">
+            <p class="copyright">
+                <script>
+                    document.write('Copyright&nbsp;&copy;&nbsp;2022 - ' + new Date().getFullYear() + '&nbsp;清雪<br>All&nbsp;Rights&nbsp;Reserved');
+                </script>
+            </p>
+            <p class="copyright" id="runtime"></p>
+            <p class="copyright contact-icons">
+                <a target="_blank" href="http://res.abeim.cn/api-qq?qq=2678652742">
+                    <img src="images/svg/qq.svg" width="30" alt="QQ" />
+                </a>
+                <a target="_blank" href="mailto:2678652742@qq.com">
+                    <img src="images/svg/mail.svg" width="30" alt="Mail" />
+                </a>
+            </p>
+        </footer>
+    </div>
+    <div id="main">
+        <article id="app">
+            <h2 class="major">清雪APP</h2>
+            <p>欢迎来到清雪APP展示页面，这里汇集了精心开发的应用程序。</p>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>应用名称</th>
+                            <th>简介</th>
+                            <th>状态</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>工具箱</td>
+                            <td>实用的日常工具集合</td>
+                            <td>可用</td>
+                        </tr>
+                        <tr>
+                            <td>播放器</td>
+                            <td>简洁高效的媒体播放器</td>
+                            <td>可用</td>
+                        </tr>
+                        <tr>
+                            <td>阅读器</td>
+                            <td>沉浸式阅读体验</td>
+                            <td>开发中</td>
+                        </tr>
+                        <tr>
+                            <td>编辑器</td>
+                            <td>轻量级文本编辑器</td>
+                            <td>开发中</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p>更多应用正在开发中，敬请期待...</p>
+        </article>
+        <article id="about">
+            <h2 class="major">关于站长</h2>
+            <p>嗨！我是清雪～</p>
+            <p>一个偶尔写代码、经常出去浪的野生开发者。这个主页嘛，算是我在数字世界里的一小块自留地，种点学习笔记，晒点技术心得，随缘更新，不卷不赶。</p>
+            <p>平时喜欢到处逛逛新技术，看到有意思的就想动手试试——能不能做出来另说，反正过程挺开心的。把脑子里奇奇怪怪的创意变成代码，是我觉得最治愈的事之一。</p>
+            <h3>我的技能树（持续点亮中）</h3>
+            <ul>
+                <li>前端开发：HTML, CSS（能跑就行，不追求极致）</li>
+                <li>设计方面：Ui设计，Ui动画（审美在线）</li>
+                <li>其他：IAPP, Python, AndLua（什么有趣学什么）</li>
+            </ul>
+            <h3>联系方式</h3>
+            <ul class="alt">
+                <li>QQ：2678652742</li>
+                <li>邮箱：<a href="mailto:2678652742@qq.com">2678652742@qq.com</a></li>
+                <p>欢迎技术交流、设计探讨，或者单纯来唠嗑～</p>
+            </ul>
+        </article>
+        <article id="donate">
+            <h2 class="major">赞助支持</h2>
+            <p id="donate-text">如果你觉得我的作品对你有帮助，欢迎赞助支持，这将帮助我持续创作更多优质内容。</p>
+            <div class="donate-tabs">
+                <span class="donate-tab active" data-target="alipay">支付宝</span>
+                <span class="donate-tab" data-target="wechat">微信</span>
+                <span class="donate-tab" data-target="qq">QQ</span>
+            </div>
+            <div class="donate-qr" id="donate-qr">
+                <div class="donate-img" id="qr-alipay">
+                    <p>支付宝收款码</p>
+                    <img src="images/alipay.png" alt="支付宝收款码" style="width:200px;height:200px;border-radius:8px;" />
+                </div>
+                <div class="donate-img" id="qr-wechat" style="display:none;">
+                    <p>微信收款码</p>
+                    <img src="images/wechat.png" alt="微信收款码" style="width:200px;height:200px;border-radius:8px;" />
+                </div>
+                <div class="donate-img" id="qr-qq" style="display:none;">
+                    <p>QQ收款码</p>
+                    <img src="images/qq_pay.png" alt="QQ收款码" style="width:200px;height:200px;border-radius:8px;" />
+                </div>
+            </div>
+            <p>感谢每一位支持者的鼓励，你们的认可是我继续创作的动力。</p>
+        </article>
+        <article id="resources">
+            <h2 class="major">资源分享</h2>
+            <p>这里分享一些我收集和整理的实用资源，希望能帮助到你。</p>
+            <ul class="alt">
+                <li><a href="https://developer.mozilla.org" target="_blank">前端开发学习路线</a> - MDN Web Docs</li>
+                <li><a href="https://dribbble.com" target="_blank">设计灵感网站推荐</a> - Dribbble</li>
+                <li><a href="https://github.com" target="_blank">开源项目精选</a> - GitHub</li>
+                <li><a href="https://tool.lu" target="_blank">在线工具合集</a> - 在线工具</li>
+            </ul>
+        </article>
+    </div>
+    <script src="assets/js/jquery.min.js"></script>
+    <script src="assets/js/breakpoints.min.js"></script>
+    <script src="assets/js/main.js"></script>
+    <script>
+    document.querySelectorAll('.donate-tab').forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            document.querySelectorAll('.donate-tab').forEach(function(t) { t.classList.remove('active'); });
+            this.classList.add('active');
+            var target = this.getAttribute('data-target');
+            document.querySelectorAll('.donate-img').forEach(function(img) { img.style.display = 'none'; });
+            document.getElementById('qr-' + target).style.display = 'block';
+        });
+    });
+    </script>
+    <script>
+    (function() {
+        var texts = [
+            '没有什么是永远的&nbsp;只要找个借口都可以走',
+            '代码改变世界，创意点亮生活',
+            '保持热爱，奔赴山海',
+            '生活不止眼前的代码，还有远方的Bug',
+            '愿你所遇皆良人，所行皆坦途',
+            '世间万物皆有裂痕，那是光照进来的地方',
+            '愿你历尽千帆，归来仍是少年',
+            '人生如代码，调试过后终会运行'
+        ];
+        var el = document.getElementById('subtitle');
+        if (el) {
+            el.innerHTML = texts[Math.floor(Math.random() * texts.length)];
+        }
+    })();
+    (function() {
+        var texts = [
+            '如果你觉得我的作品对你有帮助，欢迎赞助支持，这将帮助我持续创作更多优质内容。',
+            '每一份赞助都是对创作者最大的鼓励，感谢你的支持与认可。',
+            '你的赞助将用于服务器维护和项目开发，让作品变得更好。',
+            '支持创作者，让热爱延续。感谢你的每一份善意。',
+            '一杯咖啡的钱，就是对我最大的支持，谢谢你的慷慨。',
+            '有了你的赞助，我能投入更多时间打磨作品，感谢一路相伴。'
+        ];
+        var el = document.getElementById('donate-text');
+        if (el) {
+            el.textContent = texts[Math.floor(Math.random() * texts.length)];
+        }
+    })();
+    (function() {
+        var startTime = new Date('2022-05-25T00:00:00');
+        function updateRuntime() {
+            var now = new Date();
+            var diff = now - startTime;
+            var days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            var hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            var minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            var seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            document.getElementById('runtime').innerHTML = '本站已运行&nbsp;<strong>' + days + '</strong>&nbsp;天&nbsp;' + hours + '小时' + minutes + '分' + seconds + '秒';
+        }
+        updateRuntime();
+        setInterval(updateRuntime, 1000);
+    })();
+    </script>
+    <script>
+    (function() {
+        var glow = document.getElementById('cursorGlow');
+        var mouseX = 0, mouseY = 0, glowX = 0, glowY = 0;
+        document.addEventListener('mousemove', function(e) {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+        function animateGlow() {
+            glowX += (mouseX - glowX) * 0.08;
+            glowY += (mouseY - glowY) * 0.08;
+            glow.style.left = glowX + 'px';
+            glow.style.top = glowY + 'px';
+            requestAnimationFrame(animateGlow);
+        }
+        animateGlow();
+        function createParticle() {
+            var p = document.createElement('div');
+            p.className = 'floating-particle';
+            var size = Math.random() * 3 + 1;
+            p.style.width = size + 'px';
+            p.style.height = size + 'px';
+            p.style.left = Math.random() * 100 + 'vw';
+            p.style.animationDuration = (Math.random() * 8 + 6) + 's';
+            p.style.animationDelay = (Math.random() * 3) + 's';
+            p.style.opacity = Math.random() * 0.3 + 0.05;
+            document.body.appendChild(p);
+            setTimeout(function() {
+                if (p.parentNode) p.parentNode.removeChild(p);
+            }, 18000);
+        }
+        for (var i = 0; i < 8; i++) {
+            setTimeout(createParticle, i * 600);
+        }
+        setInterval(createParticle, 2000);
+        document.querySelectorAll('#header nav ul li a').forEach(function(link) {
+            link.addEventListener('click', function(e) {
+                var ripple = document.createElement('span');
+                ripple.style.cssText = 'position:absolute;border-radius:50%;background:rgba(255,255,255,0.3);transform:scale(0);animation:rippleAnim 0.6s ease-out forwards;pointer-events:none;';
+                var rect = this.getBoundingClientRect();
+                var size = Math.max(rect.width, rect.height);
+                ripple.style.width = ripple.style.height = size + 'px';
+                ripple.style.left = (e.clientX - rect.left - size/2) + 'px';
+                ripple.style.top = (e.clientY - rect.top - size/2) + 'px';
+                this.style.position = 'relative';
+                this.appendChild(ripple);
+                setTimeout(function() { ripple.remove(); }, 600);
+            });
+        });
+        var style = document.createElement('style');
+        style.textContent = '@keyframes rippleAnim{to{transform:scale(2.5);opacity:0;}}';
+        document.head.appendChild(style);
+    })();
+    </script>
 </body>
 </html>
-
